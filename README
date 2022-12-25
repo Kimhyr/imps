@@ -1,0 +1,10 @@
+Imps (implementations)
+        Various implementations of data structures and aglorithms for tests,
+        experiments, and curiosity.
+
+File structure
+        ```
+        imps
+        |- text_buffer: Experimental text buffer for text editors (https://en.wikipedia.org/wiki/Text_buffer).
+        `- hash_table: A hash table (https://en.wikipedia.org/wiki/Hash_table).
+        ```
