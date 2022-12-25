@@ -1,0 +1,45 @@
+__int64 battleye::exception_handler(_EXCEPTION_POINTERS *exception)
+{
+    if (exception->ExceptionRecord->ExceptionCode != STATUS_BREAKPOINT)
+        return 0;
+ 
+    const auto caller_function = *(__int64 **)exception->ContextRecord->Rsp;
+    MEMORY_BASIC_INFORMATION caller_memory_information = {};
+    auto desired_size = 0;
+    const __uint8 flags = 0;
+    
+	// QUERY THE MEMORY PAGE OF THE CALLER
+	flags |= NtQueryVirtualMemory(GetCurrentProcess(), caller_function,
+	                              MemoryBasicInformation, &caller_memory_information, 
+                                  sizeof(caller_memory_information), &desired_size) < 0;
+	// IS THE MEMORY SOMEHOW NOT COMMITTED? (WOULD SUGGEST VAD MANIPULATIUON)
+    flags |= (caller_memory_information.State != MEM_COMMIT) << 1;
+    // IS THE PAGE EXECUTABLE BUT DOES NOT BELONG TO A PROPERLY LOADED MODULE?
+    flags |= (caller_memory_information.Type != MEM_IMAGE &&
+	          caller_memory_information.RegionSize > 0x2000) << 2;
+	// IS THE CALL BEING SPOOFED BY NAMAZSO?
+    flags |= (*(_WORD *)caller_function == 0x23FF) << 3; // jmp qword ptr [rbx]
+ 
+    // FLAG ALL ANBORMALITIES
+    if (flags != 0b00001111)
+		return 0;
+    report_stack.unknown = 0;
+    report_stack.report_id = 0x31;
+    report_stack.hook_id = hook_id;
+    report_stack.caller = (__int64)caller_function;
+    report_stack.function_dump[0] = caller_function[0];
+    report_stack.function_dump[1] = caller_function[1];
+    report_stack.function_dump[2] = caller_function[2];
+    report_stack.function_dump[3] = caller_function[3];
+    if (!call_failed)
+    {
+        report_stack.allocation_base = caller_memory_information.AllocationBase;
+        report_stack.base_address = caller_memory_information.BaseAddress;
+        report_stack.region_size = caller_memory_information.RegionSize;
+        report_stack.type_protect_state = caller_memory_information.Type |
+		                                  caller_memory_information.Protect |
+										  caller_memory_information.State;
+    }
+    battleye::report(&report_stack, sizeof(report_stack), false);
+    return -1;
+}

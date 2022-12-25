@@ -1,0 +1,16 @@
+BasedOnStyle: LLVM
+
+SortIncludes: Never
+
+# Indentation
+UseTab: Never
+IndentWidth: 8
+TabWidth: 8
+
+# Short inline statements
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
